@@ -1,91 +1,127 @@
-# Claude Token Counter
+# Claude Usage Widget
 
-Маленький десктоп-виджет под macOS и Windows, который считает токены Claude через официальный эндпоинт `/v1/messages/count_tokens`. Написан на Tauri (Rust + HTML/CSS/JS).
+A minimal desktop widget that shows your **Claude Max subscription usage** — 5-hour and 7-day token limits — with live countdown timers to the next reset.
 
-## Что внутри
+Built with [Tauri 2](https://v2.tauri.app/) (Rust + vanilla JS). No API keys to configure; credentials are read automatically from your browser.
 
-- **Rust-бэкенд** (`src-tauri/`) — делает запрос к Anthropic API, хранит ключ в системном keychain через крейт `keyring`.
-- **Фронт** (`src/`) — vanilla HTML/CSS/JS, без сборщиков. Шрифты грузятся с Google Fonts.
-- **Окно** 380×540, ресайзится. В `tauri.conf.json` есть `alwaysOnTop: false` — поменяй на `true`, если хочешь поверх всех окон.
+---
 
-## Требования
+## Features
 
-- Node.js 18+ (для `@tauri-apps/cli`)
-- Rust (`rustup` → стабильный канал)
-- macOS: Xcode Command Line Tools (`xcode-select --install`)
-- Windows: MSVC Build Tools + WebView2 (обычно уже стоит)
+- Live countdown to limit reset (updates every second)
+- Progress bars with color thresholds: normal → warning (70 %) → danger (90 %)
+- Auto-refresh every 2 minutes
+- Pin-on-top toggle — keep the widget visible above all other windows
+- State persists across restarts (pin preference saved in `localStorage`)
 
-Подробности окружения: <https://tauri.app/start/prerequisites/>.
+---
 
-## Запуск
+## Platform support
+
+| Platform | Status  | Notes |
+|----------|---------|-------|
+| macOS    | ✅ Full | Reads cookies from Claude desktop app, Chrome, Brave, Edge, Chromium, or Firefox |
+| Windows  | 🚧 Planned | Cookie decryption via DPAPI not yet implemented |
+
+---
+
+## macOS
+
+### Requirements
+
+- macOS 11 Big Sur or later
+- [Rust](https://rustup.rs/) (stable channel)
+- Xcode Command Line Tools: `xcode-select --install`
+- Python 3 and OpenSSL — both ship with macOS by default
+- A **Claude Max** subscription
+- Logged in to **claude.ai** in at least one of: Claude desktop app, Chrome, Brave, Edge, Chromium, or Firefox
+
+### Build and run
 
 ```bash
-cd claude-token-counter
-npm install
-npm run dev      # дев-режим с hot reload фронта
+# Clone the repo
+git clone <repo-url>
+cd wcte
+
+# Development build with DevTools
+cargo tauri dev
+
+# Production build
+cargo tauri build
+# → src-tauri/target/release/bundle/macos/Claude Token Counter.app
 ```
 
-Сборка релиза:
+### Auto-start at login
 
-```bash
-npm run build    # → src-tauri/target/release/bundle/
+1. Build: `cargo tauri build`
+2. Copy `Claude Token Counter.app` to `/Applications`
+3. Open **System Settings → General → Login Items & Extensions**
+4. Click **+** under "Open at Login" and select **Claude Token Counter.app**
+
+The widget will open automatically on every login.
+
+### How credentials are read
+
+The widget searches for your `sessionKey` cookie in the following order, stopping at the first match:
+
+1. Claude desktop app — `~/Library/Application Support/Claude/Cookies`
+2. Google Chrome — `~/Library/Application Support/Google/Chrome/Default/Cookies`
+3. Brave — `~/Library/Application Support/BraveSoftware/Brave-Browser/Default/Cookies`
+4. Microsoft Edge — `~/Library/Application Support/Microsoft Edge/Default/Cookies`
+5. Chromium — `~/Library/Application Support/Chromium/Default/Cookies`
+6. Firefox — `~/Library/Application Support/Firefox/Profiles/*/cookies.sqlite` (unencrypted)
+
+For Chromium-based browsers, cookies are encrypted with AES-128-CBC. The widget decrypts them using:
+- The browser's safe-storage key from macOS Keychain
+- PBKDF2-HMAC-SHA1 key derivation (salt: `saltysalt`, 1003 iterations, 16-byte key)
+- Embedded IV from the cookie's `v10` format
+
+No credentials are ever written to disk or sent anywhere except claude.ai.
+
+### Troubleshooting (macOS)
+
+| Error | Fix |
+|-------|-----|
+| `sessionKey not found` | Log in to [claude.ai](https://claude.ai) in Chrome, Brave, Edge, or Firefox, then click Refresh |
+| `Claude Safe Storage not found` | Log out and back in to claude.ai in your browser |
+| `Auth failed (403)` | Your session has expired — log in to claude.ai again |
+| `API error 404` | The cached org ID was stale; it will be cleared automatically — click Refresh |
+| No numbers visible | Check the status bar at the bottom of the widget for the error message |
+
+---
+
+## Windows
+
+> **Windows support is not yet implemented.**
+>
+> The current cookie-reading logic uses macOS-specific tools (`security`, macOS Keychain paths). Windows support requires:
+> - DPAPI-based decryption for Chrome/Edge/Brave cookies
+> - Updated cookie paths (`%LOCALAPPDATA%\Google\Chrome\User Data\Default\...`)
+> - Updated Cargo features (remove `apple-native` from `keyring`)
+>
+> Contributions welcome.
+
+---
+
+## Project structure
+
 ```
-
-На выходе:
-- macOS: `.app` и `.dmg`
-- Windows: `.msi` и `.exe`
-
-## Первый запуск
-
-Откроется диалог с просьбой ввести API-ключ Anthropic (получить можно на <https://console.anthropic.com>). Ключ сохраняется в keychain ОС — он не лежит в файлах проекта.
-
-## Управление
-
-- `⌘/Ctrl + Enter` в текстовом поле — посчитать токены
-- Шестерёнка справа сверху — настройки ключа
-- При смене модели стоимость пересчитывается мгновенно (число токенов то же, цена разная)
-
-## Кастомизация
-
-- **Цены**: в `src/main.js` объект `PRICING` — отредактируй под актуальный прайс <https://www.anthropic.com/pricing>.
-- **Модели**: список в `src/index.html` (`<select id="model">`) и пары к нему в `PRICING`.
-- **Always-on-top**: `src-tauri/tauri.conf.json` → `windows[0].alwaysOnTop`.
-- **Иконки**: лежат в `src-tauri/icons/` — это плейсхолдеры. Замени на свои или сгенерируй через `npx @tauri-apps/cli icon path/to/source.png`.
-- **Авто-подсчёт по вводу**: в `src/main.js` можно добавить debounce на `input` event и звать `countNow()` — закомментировал намеренно, чтобы не палить квоту API.
-
-## Структура
-
-```
-claude-token-counter/
-├── package.json
+wcte/
 ├── src/
-│   ├── index.html
-│   ├── main.js
-│   └── styles.css
+│   ├── index.html      # Widget UI
+│   ├── main.js         # Tauri bridge, refresh loop, pin toggle
+│   └── styles.css      # Dark/light theme, progress bars
 └── src-tauri/
     ├── Cargo.toml
-    ├── build.rs
     ├── tauri.conf.json
-    ├── capabilities/default.json
-    ├── icons/
+    ├── capabilities/
+    │   └── default.json
     └── src/
-        ├── main.rs
-        └── lib.rs
+        └── lib.rs      # Cookie decryption, org ID cache, usage API
 ```
 
-## CI
+---
 
-В `.github/workflows/build.yml` есть workflow, который собирает приложение на каждый PR в `main` и при пуше в `main`:
+## License
 
-- **macOS** — universal-бинарь (Intel + Apple Silicon), на выходе `.dmg` и `.app`
-- **Windows** — x64, на выходе `.msi` и `.exe` (NSIS)
-
-Артефакты складываются в "Artifacts" на странице workflow-run, хранятся 14 дней. Можно скачать без локальной сборки. Rust-кеш через `swatinem/rust-cache` — первая сборка ~10 мин, последующие 2–4. Подписи и нотаризации тут нет — для PR-сборок не нужно.
-
-Запустить руками: вкладка Actions → Build → Run workflow.
-
-## Замечания
-
-- Эндпоинт `count_tokens` бесплатный — Anthropic не списывает деньги за подсчёт.
-- Подсчёт — это «estimate», как пишут в доке: фактическое число при реальном вызове Messages API может отличаться на пару токенов из-за системных оптимизаций.
-- Картинки и PDF тоже можно считать (эндпоинт это поддерживает), но в этом виджете пока только текст — добавить дроп-зону для файлов несложно.
+MIT

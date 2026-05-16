@@ -1,18 +1,13 @@
-/* ─────────────────────────────────────────────────────────────
-   Claude Token Counter
-   Refined editorial dark theme with a serif hero number.
-   ───────────────────────────────────────────────────────────── */
-
 :root {
   --bg:        #15140f;
   --panel:     #1d1c17;
-  --panel-2:   #25231d;
+  --panel-2:   #2a2820;
   --ink:       #f1ece0;
   --ink-dim:   #a39d8e;
   --ink-muted: #6f6a5d;
   --rule:      #2d2a23;
-  --accent:    #d6a26b;   /* warm clay */
-  --accent-2:  #c97b48;   /* ember */
+  --accent:    #c97b48;
+  --warning:   #d4a843;
   --danger:    #c96e5e;
   --radius:    8px;
 }
@@ -21,13 +16,13 @@
   :root {
     --bg:        #f6f2e8;
     --panel:     #fdfaf1;
-    --panel-2:   #f0ebdc;
+    --panel-2:   #ede8d8;
     --ink:       #1a1814;
     --ink-dim:   #5a554b;
     --ink-muted: #8a8576;
-    --rule:      #e2dccb;
-    --accent:    #a36a32;
-    --accent-2:  #b25826;
+    --rule:      #ddd8c8;
+    --accent:    #b25826;
+    --warning:   #a07c20;
   }
 }
 
@@ -38,10 +33,9 @@ html, body {
   background: var(--bg);
   color: var(--ink);
   font-family: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  font-size: 13px;
-  line-height: 1.45;
+  font-size: 14px;
+  line-height: 1.4;
   -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
   overflow: hidden;
   user-select: none;
 }
@@ -52,43 +46,29 @@ html, body {
   height: 100vh;
 }
 
-/* ── Header ───────────────────────────────────────────────── */
+/* ── Header ─────────────────────────────────────────────── */
 
 header {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 4px;
   padding: 10px 14px;
   border-bottom: 1px solid var(--rule);
   -webkit-app-region: drag;
 }
-
 header > * { -webkit-app-region: no-drag; }
 
-#model {
-  appearance: none;
-  -webkit-appearance: none;
-  background: var(--panel);
-  color: var(--ink);
-  border: 1px solid var(--rule);
-  border-radius: var(--radius);
-  padding: 6px 26px 6px 10px;
-  font: inherit;
-  font-size: 12px;
-  font-weight: 500;
+.app-title {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 600;
   letter-spacing: 0.01em;
-  cursor: pointer;
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'><path d='M2 4l3 3 3-3' stroke='%23a39d8e' fill='none' stroke-width='1.2'/></svg>");
-  background-repeat: no-repeat;
-  background-position: right 8px center;
-  background-size: 9px;
-  transition: border-color 120ms;
+  color: var(--ink);
 }
-#model:hover { border-color: var(--ink-muted); }
-#model:focus { outline: none; border-color: var(--accent); }
 
+#refresh-btn,
+#pin-btn,
 #settings-btn {
-  margin-left: auto;
   background: transparent;
   border: 1px solid transparent;
   color: var(--ink-muted);
@@ -101,115 +81,117 @@ header > * { -webkit-app-region: no-drag; }
   cursor: pointer;
   transition: color 120ms, background 120ms;
 }
+#refresh-btn:hover,
+#pin-btn:hover,
 #settings-btn:hover { color: var(--ink); background: var(--panel); }
 
-/* ── Textarea ─────────────────────────────────────────────── */
+#pin-btn.active { color: var(--accent); }
+
+/* ── Main ───────────────────────────────────────────────── */
 
 main {
   flex: 1;
-  padding: 14px;
-  min-height: 0;
-}
-
-#input {
-  width: 100%;
-  height: 100%;
-  background: var(--panel);
-  color: var(--ink);
-  border: 1px solid var(--rule);
-  border-radius: var(--radius);
-  padding: 12px;
-  resize: none;
-  font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 12px;
-  line-height: 1.55;
-  user-select: text;
-  transition: border-color 120ms;
-}
-#input::placeholder { color: var(--ink-muted); font-style: italic; }
-#input:focus { outline: none; border-color: var(--accent); }
-
-/* ── Display (hero) ───────────────────────────────────────── */
-
-#display {
-  padding: 4px 14px 12px;
   display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 16px;
+  flex-direction: column;
+  padding: 0 16px;
 }
 
-.hero {
+.divider {
+  height: 1px;
+  background: var(--rule);
+}
+
+/* ── Usage block ────────────────────────────────────────── */
+
+.usage-block {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 12px;
+  padding: 18px 0;
+}
+
+.block-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink-muted);
+}
+
+/* ── Big number ─────────────────────────────────────────── */
+
+.stat-row {
   display: flex;
   align-items: baseline;
   gap: 8px;
-  line-height: 1;
 }
 
-.tokens {
-  font-family: "Instrument Serif", "Iowan Old Style", Georgia, serif;
-  font-size: 52px;
-  font-weight: 400;
-  letter-spacing: -0.01em;
+.stat-number {
+  font-family: "JetBrains Mono", ui-monospace, Menlo, monospace;
+  font-size: 48px;
+  font-weight: 500;
+  line-height: 1;
   color: var(--ink);
   font-variant-numeric: tabular-nums;
-  font-feature-settings: "lnum" 1;
-  transition: color 200ms;
+  letter-spacing: -0.02em;
 }
-.tokens.counting { color: var(--ink-muted); }
-.tokens.error    { color: var(--danger); font-size: 18px; font-family: "IBM Plex Sans", sans-serif; font-style: italic; }
 
-.tokens-label {
-  font-family: "Instrument Serif", serif;
-  font-style: italic;
+.stat-unit {
   font-size: 16px;
+  font-weight: 500;
   color: var(--ink-dim);
-  transform: translateY(-6px);
 }
 
-.meta {
+/* ── Progress ───────────────────────────────────────────── */
+
+.progress-wrap {
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
-  gap: 8px;
+  gap: 6px;
 }
 
-#cost {
-  font-size: 11px;
-  color: var(--ink-dim);
-  font-variant-numeric: tabular-nums;
-  letter-spacing: 0.02em;
-}
-
-#count-btn {
-  background: var(--accent-2);
-  color: #fff;
-  border: none;
+.progress-track {
+  height: 8px;
+  background: var(--panel-2);
   border-radius: 999px;
-  padding: 7px 14px;
-  font: inherit;
-  font-size: 12px;
-  font-weight: 500;
-  letter-spacing: 0.01em;
-  cursor: pointer;
-  transition: filter 120ms, transform 80ms;
+  overflow: hidden;
 }
-#count-btn:hover  { filter: brightness(1.08); }
-#count-btn:active { transform: translateY(1px); }
-#count-btn:disabled { opacity: 0.5; cursor: default; }
 
-/* ── Status line ──────────────────────────────────────────── */
+.progress-fill {
+  height: 100%;
+  width: 0;
+  border-radius: 999px;
+  background: var(--accent);
+  transition: width 600ms ease, background 300ms;
+}
+.progress-fill.warning { background: var(--warning); }
+.progress-fill.danger  { background: var(--danger); }
 
-#status {
-  min-height: 22px;
-  padding: 0 14px 10px;
+.resets-label {
+  font-size: 12px;
+  color: var(--ink-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Footer ─────────────────────────────────────────────── */
+
+footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px 12px;
   font-size: 11px;
   color: var(--ink-muted);
-  font-style: italic;
 }
-#status.error { color: var(--danger); font-style: normal; }
 
-/* ── Settings dialog ──────────────────────────────────────── */
+.last-updated { font-variant-numeric: tabular-nums; }
+
+#status { max-width: 200px; word-break: break-word; }
+#status.error { color: var(--danger); font-style: normal; font-size: 12px; }
+
+/* ── Dialog ─────────────────────────────────────────────── */
 
 dialog#settings-dialog {
   background: var(--panel);
@@ -217,33 +199,36 @@ dialog#settings-dialog {
   border: 1px solid var(--rule);
   border-radius: 12px;
   padding: 22px;
-  min-width: 320px;
+  min-width: 300px;
   max-width: 90vw;
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 24px 60px rgba(0,0,0,0.55);
 }
-dialog::backdrop { background: rgba(10, 9, 7, 0.55); backdrop-filter: blur(2px); }
+dialog::backdrop { background: rgba(10,9,7,0.6); backdrop-filter: blur(2px); }
 
 dialog h2 {
-  font-family: "Instrument Serif", serif;
-  font-size: 22px;
-  font-weight: 400;
-  letter-spacing: 0;
+  font-size: 18px;
+  font-weight: 600;
   margin-bottom: 8px;
 }
 
 dialog .hint {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--ink-dim);
-  line-height: 1.5;
+  line-height: 1.6;
   margin-bottom: 16px;
 }
-.mono { font-family: "JetBrains Mono", monospace; font-size: 10.5px; color: var(--ink); }
+.mono {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11px;
+  color: var(--ink);
+}
 
 dialog label {
   display: block;
-  font-size: 10px;
+  font-size: 11px;
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.07em;
   color: var(--ink-muted);
   margin-bottom: 6px;
 }
@@ -261,34 +246,43 @@ dialog input {
 }
 dialog input:focus { outline: none; border-color: var(--accent); }
 
+.dialog-status {
+  min-height: 20px;
+  font-size: 12px;
+  color: var(--ink-muted);
+  font-style: italic;
+  margin-top: 8px;
+}
+.dialog-status.error { color: var(--danger); font-style: normal; }
+
 .dialog-buttons {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-top: 18px;
+  margin-top: 16px;
 }
 .spacer { flex: 1; }
 
 .dialog-buttons button {
-  padding: 7px 13px;
+  padding: 8px 14px;
   border-radius: var(--radius);
   border: 1px solid var(--rule);
   background: transparent;
   color: var(--ink);
   font: inherit;
-  font-size: 12px;
+  font-size: 13px;
   cursor: pointer;
-  transition: background 120ms, border-color 120ms;
+  transition: background 120ms;
 }
 .dialog-buttons button:hover { background: var(--panel-2); }
+.dialog-buttons button:disabled { opacity: 0.45; cursor: default; }
+
 .dialog-buttons .primary {
-  background: var(--accent-2);
-  border-color: var(--accent-2);
+  background: var(--accent);
+  border-color: var(--accent);
   color: #fff;
 }
-.dialog-buttons .primary:hover { filter: brightness(1.08); background: var(--accent-2); }
-.dialog-buttons .danger {
-  color: var(--danger);
-  border-color: transparent;
-}
-.dialog-buttons .danger:hover { background: rgba(201, 110, 94, 0.1); }
+.dialog-buttons .primary:hover { filter: brightness(1.1); }
+
+.dialog-buttons .danger { color: var(--danger); border-color: transparent; }
+.dialog-buttons .danger:hover { background: rgba(201,110,94,0.12); }

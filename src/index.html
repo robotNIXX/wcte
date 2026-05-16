@@ -3,11 +3,11 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Claude Token Counter</title>
+    <title>Claude Usage</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap"
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="styles.css" />
@@ -15,63 +15,59 @@
   <body>
     <div id="app">
       <header>
-        <select id="model" aria-label="Model">
-          <option value="claude-opus-4-7">Opus 4.7</option>
-          <option value="claude-opus-4-6">Opus 4.6</option>
-          <option value="claude-sonnet-4-6" selected>Sonnet 4.6</option>
-          <option value="claude-haiku-4-5-20251001">Haiku 4.5</option>
-        </select>
-        <button id="settings-btn" title="Settings" aria-label="Settings">
-          <svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor" aria-hidden="true">
-            <path d="M8 5.5a2.5 2.5 0 100 5 2.5 2.5 0 000-5zm6.93 3.1l-1.36-.79a5.5 5.5 0 000-1.62l1.36-.79a.5.5 0 00.18-.68l-1.5-2.6a.5.5 0 00-.68-.18l-1.36.79a5.5 5.5 0 00-1.4-.81l-.26-1.55A.5.5 0 0010 0H7a.5.5 0 00-.5.42L6.24 1.97a5.5 5.5 0 00-1.4.81L3.48 2a.5.5 0 00-.68.18l-1.5 2.6a.5.5 0 00.18.68l1.36.79a5.5 5.5 0 000 1.62l-1.36.79a.5.5 0 00-.18.68l1.5 2.6a.5.5 0 00.68.18l1.36-.79a5.5 5.5 0 001.4.81l.26 1.55A.5.5 0 007 16h3a.5.5 0 00.5-.42l.26-1.55a5.5 5.5 0 001.4-.81l1.36.79a.5.5 0 00.68-.18l1.5-2.6a.5.5 0 00-.18-.68z"/>
+        <span class="app-title">Claude Usage</span>
+        <span id="last-updated" class="last-updated"></span>
+        <button id="pin-btn" title="Always on top" aria-label="Toggle always on top" aria-pressed="false">
+          <svg viewBox="0 0 16 16" width="13" height="13" fill="currentColor">
+            <path d="M9.828.722a.5.5 0 0 1 .354.146l4.95 4.95a.5.5 0 0 1 0 .707c-.48.48-1.072.588-1.503.588-.177 0-.335-.018-.46-.039l-3.134 3.134a6 6 0 0 1 .16 1.013c.046.702-.032 1.687-.72 2.375a.5.5 0 0 1-.707 0l-2.829-2.828-3.182 3.182c-.195.195-1.219.902-1.414.707s.512-1.22.707-1.414l3.182-3.182-2.828-2.829a.5.5 0 0 1 0-.707c.688-.688 1.673-.767 2.375-.72a6 6 0 0 1 1.013.16l3.134-3.133a3 3 0 0 1-.04-.461c0-.43.108-1.022.589-1.503a.5.5 0 0 1 .353-.146"/>
+          </svg>
+        </button>
+        <button id="refresh-btn" title="Refresh" aria-label="Refresh">
+          <svg viewBox="0 0 16 16" width="13" height="13" fill="currentColor">
+            <path d="M13.65 2.35A8 8 0 1 0 15 8h-1.5a6.5 6.5 0 1 1-1.12-3.65L10 6.5h4.5V2l-2.85 2.85z"/>
           </svg>
         </button>
       </header>
 
       <main>
-        <textarea
-          id="input"
-          placeholder="Paste or type text to count..."
-          spellcheck="false"
-          autocomplete="off"
-        ></textarea>
+        <!-- 5-hour block -->
+        <div class="usage-block">
+          <div class="block-label">5-hour window</div>
+          <div class="stat-row">
+            <span id="fh-pct" class="stat-number">·</span>
+            <span class="stat-unit">% used</span>
+          </div>
+          <div class="progress-wrap">
+            <div class="progress-track">
+              <div id="fh-bar" class="progress-fill"></div>
+            </div>
+            <span id="fh-resets" class="resets-label"></span>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- 7-day block -->
+        <div class="usage-block">
+          <div class="block-label">7-day window</div>
+          <div class="stat-row">
+            <span id="sd-pct" class="stat-number">·</span>
+            <span class="stat-unit">% used</span>
+          </div>
+          <div class="progress-wrap">
+            <div class="progress-track">
+              <div id="sd-bar" class="progress-fill"></div>
+            </div>
+            <span id="sd-resets" class="resets-label"></span>
+          </div>
+        </div>
       </main>
 
-      <section id="display">
-        <div class="hero">
-          <span id="tokens" class="tokens">—</span>
-          <span class="tokens-label">tokens</span>
-        </div>
-        <div class="meta">
-          <span id="cost">no estimate</span>
-          <button id="count-btn">Count <span aria-hidden="true">→</span></button>
-        </div>
-      </section>
-
-      <div id="status" role="status" aria-live="polite"></div>
+      <footer>
+        <span id="last-updated-label" class="last-updated-label"></span>
+        <span id="status" role="status" aria-live="polite"></span>
+      </footer>
     </div>
-
-    <dialog id="settings-dialog">
-      <h2>API Key</h2>
-      <p class="hint">
-        Stored in your OS keychain (macOS Keychain / Windows Credential Manager).
-        Get a key at <span class="mono">console.anthropic.com</span>.
-      </p>
-      <label for="api-key">Anthropic API key</label>
-      <input
-        id="api-key"
-        type="password"
-        placeholder="sk-ant-..."
-        autocomplete="off"
-        spellcheck="false"
-      />
-      <div class="dialog-buttons">
-        <button id="clear-key" class="danger">Clear</button>
-        <span class="spacer"></span>
-        <button id="close-dialog">Cancel</button>
-        <button id="save-key" class="primary">Save</button>
-      </div>
-    </dialog>
 
     <script src="main.js" type="module"></script>
   </body>

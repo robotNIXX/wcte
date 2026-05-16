@@ -7,14 +7,15 @@
     "frontendDist": "../src"
   },
   "app": {
+    "withGlobalTauri": true,
     "windows": [
       {
         "label": "main",
         "title": "Claude Token Counter",
-        "width": 380,
-        "height": 540,
-        "minWidth": 320,
-        "minHeight": 420,
+        "width": 340,
+        "height": 380,
+        "minWidth": 280,
+        "minHeight": 320,
         "resizable": true,
         "alwaysOnTop": false,
         "decorations": true,
