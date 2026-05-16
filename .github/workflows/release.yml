@@ -9,7 +9,7 @@ jobs:
     name: macOS (universal)
     runs-on: macos-latest
     permissions:
-      contents: write   # needed to upload release assets
+      contents: write
 
     steps:
       - uses: actions/checkout@v4
@@ -24,15 +24,14 @@ jobs:
         with:
           workspaces: src-tauri
 
-      - name: Install Tauri CLI
-        run: cargo install tauri-cli --version "^2" --locked
-
-      - name: Build universal macOS app
-        run: cargo tauri build --target universal-apple-darwin
-
-      - name: Upload .dmg to release
+      - name: Build and upload to release
+        uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          DMG=$(find src-tauri/target/universal-apple-darwin/release/bundle/dmg -name "*.dmg" | head -1)
-          gh release upload "${{ github.event.release.tag_name }}" "$DMG" --clobber
+        with:
+          tagName: ${{ github.event.release.tag_name }}
+          releaseName: ${{ github.event.release.name }}
+          releaseBody: ${{ github.event.release.body }}
+          releaseDraft: false
+          prerelease: false
+          args: --target universal-apple-darwin
