@@ -1,0 +1,294 @@
+/* ─────────────────────────────────────────────────────────────
+   Claude Token Counter
+   Refined editorial dark theme with a serif hero number.
+   ───────────────────────────────────────────────────────────── */
+
+:root {
+  --bg:        #15140f;
+  --panel:     #1d1c17;
+  --panel-2:   #25231d;
+  --ink:       #f1ece0;
+  --ink-dim:   #a39d8e;
+  --ink-muted: #6f6a5d;
+  --rule:      #2d2a23;
+  --accent:    #d6a26b;   /* warm clay */
+  --accent-2:  #c97b48;   /* ember */
+  --danger:    #c96e5e;
+  --radius:    8px;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg:        #f6f2e8;
+    --panel:     #fdfaf1;
+    --panel-2:   #f0ebdc;
+    --ink:       #1a1814;
+    --ink-dim:   #5a554b;
+    --ink-muted: #8a8576;
+    --rule:      #e2dccb;
+    --accent:    #a36a32;
+    --accent-2:  #b25826;
+  }
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  height: 100%;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 13px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow: hidden;
+  user-select: none;
+}
+
+#app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+/* ── Header ───────────────────────────────────────────────── */
+
+header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--rule);
+  -webkit-app-region: drag;
+}
+
+header > * { -webkit-app-region: no-drag; }
+
+#model {
+  appearance: none;
+  -webkit-appearance: none;
+  background: var(--panel);
+  color: var(--ink);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  padding: 6px 26px 6px 10px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'><path d='M2 4l3 3 3-3' stroke='%23a39d8e' fill='none' stroke-width='1.2'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  background-size: 9px;
+  transition: border-color 120ms;
+}
+#model:hover { border-color: var(--ink-muted); }
+#model:focus { outline: none; border-color: var(--accent); }
+
+#settings-btn {
+  margin-left: auto;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--ink-muted);
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: color 120ms, background 120ms;
+}
+#settings-btn:hover { color: var(--ink); background: var(--panel); }
+
+/* ── Textarea ─────────────────────────────────────────────── */
+
+main {
+  flex: 1;
+  padding: 14px;
+  min-height: 0;
+}
+
+#input {
+  width: 100%;
+  height: 100%;
+  background: var(--panel);
+  color: var(--ink);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  padding: 12px;
+  resize: none;
+  font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  line-height: 1.55;
+  user-select: text;
+  transition: border-color 120ms;
+}
+#input::placeholder { color: var(--ink-muted); font-style: italic; }
+#input:focus { outline: none; border-color: var(--accent); }
+
+/* ── Display (hero) ───────────────────────────────────────── */
+
+#display {
+  padding: 4px 14px 12px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.hero {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  line-height: 1;
+}
+
+.tokens {
+  font-family: "Instrument Serif", "Iowan Old Style", Georgia, serif;
+  font-size: 52px;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "lnum" 1;
+  transition: color 200ms;
+}
+.tokens.counting { color: var(--ink-muted); }
+.tokens.error    { color: var(--danger); font-size: 18px; font-family: "IBM Plex Sans", sans-serif; font-style: italic; }
+
+.tokens-label {
+  font-family: "Instrument Serif", serif;
+  font-style: italic;
+  font-size: 16px;
+  color: var(--ink-dim);
+  transform: translateY(-6px);
+}
+
+.meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+#cost {
+  font-size: 11px;
+  color: var(--ink-dim);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+}
+
+#count-btn {
+  background: var(--accent-2);
+  color: #fff;
+  border: none;
+  border-radius: 999px;
+  padding: 7px 14px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  transition: filter 120ms, transform 80ms;
+}
+#count-btn:hover  { filter: brightness(1.08); }
+#count-btn:active { transform: translateY(1px); }
+#count-btn:disabled { opacity: 0.5; cursor: default; }
+
+/* ── Status line ──────────────────────────────────────────── */
+
+#status {
+  min-height: 22px;
+  padding: 0 14px 10px;
+  font-size: 11px;
+  color: var(--ink-muted);
+  font-style: italic;
+}
+#status.error { color: var(--danger); font-style: normal; }
+
+/* ── Settings dialog ──────────────────────────────────────── */
+
+dialog#settings-dialog {
+  background: var(--panel);
+  color: var(--ink);
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  padding: 22px;
+  min-width: 320px;
+  max-width: 90vw;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+}
+dialog::backdrop { background: rgba(10, 9, 7, 0.55); backdrop-filter: blur(2px); }
+
+dialog h2 {
+  font-family: "Instrument Serif", serif;
+  font-size: 22px;
+  font-weight: 400;
+  letter-spacing: 0;
+  margin-bottom: 8px;
+}
+
+dialog .hint {
+  font-size: 11px;
+  color: var(--ink-dim);
+  line-height: 1.5;
+  margin-bottom: 16px;
+}
+.mono { font-family: "JetBrains Mono", monospace; font-size: 10.5px; color: var(--ink); }
+
+dialog label {
+  display: block;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink-muted);
+  margin-bottom: 6px;
+}
+
+dialog input {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  color: var(--ink);
+  padding: 9px 11px;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 12px;
+  user-select: text;
+}
+dialog input:focus { outline: none; border-color: var(--accent); }
+
+.dialog-buttons {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 18px;
+}
+.spacer { flex: 1; }
+
+.dialog-buttons button {
+  padding: 7px 13px;
+  border-radius: var(--radius);
+  border: 1px solid var(--rule);
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 120ms, border-color 120ms;
+}
+.dialog-buttons button:hover { background: var(--panel-2); }
+.dialog-buttons .primary {
+  background: var(--accent-2);
+  border-color: var(--accent-2);
+  color: #fff;
+}
+.dialog-buttons .primary:hover { filter: brightness(1.08); background: var(--accent-2); }
+.dialog-buttons .danger {
+  color: var(--danger);
+  border-color: transparent;
+}
+.dialog-buttons .danger:hover { background: rgba(201, 110, 94, 0.1); }

@@ -1,0 +1,14 @@
+{
+  "name": "claude-token-counter",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Cross-platform desktop widget for counting Claude API tokens",
+  "scripts": {
+    "dev":   "tauri dev",
+    "build": "tauri build",
+    "tauri": "tauri"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.0.0"
+  }
+}
