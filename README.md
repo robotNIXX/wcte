@@ -12,6 +12,8 @@ Built with [Tauri 2](https://v2.tauri.app/) (Rust + vanilla JS). No API keys to 
 - Progress bars with color thresholds: normal → warning (70 %) → danger (90 %)
 - Auto-refresh every 2 minutes
 - Pin-on-top toggle — keep the widget visible above all other windows
+- **Menu-bar tray icon** — left-click toggles the window, right-click opens an Open/Quit menu; closing the window hides it to the tray instead of quitting
+- **Native notifications** at 5 %, 50 %, 75 %, and 90 % usage for each window (5-hour and 7-day), suppressed only while the widget is visible *and* pinned (so it doesn't interrupt you when you're already watching it)
 - State persists across restarts (pin preference saved in `localStorage`)
 
 ---
@@ -60,6 +62,15 @@ cargo tauri build
 
 The widget will open automatically on every login.
 
+### Notifications
+
+The widget uses [`tauri-plugin-notification`](https://v2.tauri.app/plugin/notification/) to fire native macOS banners via `UNUserNotificationCenter`.
+
+- On first run after install, macOS will show a system permission dialog — accept it for banners to appear.
+- If you missed the dialog, enable notifications manually: **System Settings → Notifications → Claude Token Counter → Allow Notifications**, style "Banners" or "Alerts".
+- Each threshold (5 %, 50 %, 75 %, 90 %) fires once per crossing; if usage drops back below it and crosses again later, the notification re-fires.
+- While the widget window is visible **and** pinned, threshold notifications are skipped — you're already looking at the numbers.
+
 ### How credentials are read
 
 The widget searches for your `sessionKey` cookie in the following order, stopping at the first match:
@@ -87,6 +98,7 @@ No credentials are ever written to disk or sent anywhere except claude.ai.
 | `Auth failed (403)` | Your session has expired — log in to claude.ai again |
 | `API error 404` | The cached org ID was stale; it will be cleared automatically — click Refresh |
 | No numbers visible | Check the status bar at the bottom of the widget for the error message |
+| Notifications never appear | Open **System Settings → Notifications → Claude Token Counter** and enable "Allow Notifications" (style: Banners or Alerts). Apple's Focus / Do Not Disturb modes also suppress them. |
 
 ---
 
