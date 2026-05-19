@@ -1,6 +1,11 @@
 use keyring::Entry;
 use serde::{Deserialize, Serialize};
 use std::process::Command;
+use tauri::{
+    menu::{Menu, MenuItem},
+    tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
+    Manager,
+};
 
 const WIDGET_SERVICE: &str = "claude-usage-widget";
 const ORG_CACHE_USER: &str = "org-id";
@@ -233,7 +238,7 @@ struct UsageData {
     seven_day_resets_at: Option<String>,
 }
 
-// ── Tauri command ──────────────────────────────────────────────
+// ── Tauri commands ─────────────────────────────────────────────
 
 #[tauri::command]
 async fn get_usage() -> Result<UsageData, String> {
@@ -279,10 +284,64 @@ async fn get_usage() -> Result<UsageData, String> {
     })
 }
 
+
+// ── App entry point ────────────────────────────────────────────
+
+fn toggle_window(app: &tauri::AppHandle) {
+    if let Some(w) = app.get_webview_window("main") {
+        if w.is_visible().unwrap_or(false) {
+            let _ = w.hide();
+        } else {
+            let _ = w.show();
+            let _ = w.set_focus();
+        }
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_notification::init())
         .invoke_handler(tauri::generate_handler![get_usage])
+        .setup(|app| {
+            let open_i = MenuItem::with_id(app, "open", "Open", true, None::<&str>)?;
+            let quit_i = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
+            let menu = Menu::with_items(app, &[&open_i, &quit_i])?;
+
+            TrayIconBuilder::new()
+                .icon(app.default_window_icon().unwrap().clone())
+                .tooltip("Claude Usage")
+                .menu(&menu)
+                .show_menu_on_left_click(false)
+                .on_menu_event(|app, event| match event.id.as_ref() {
+                    "open" => {
+                        if let Some(w) = app.get_webview_window("main") {
+                            let _ = w.show();
+                            let _ = w.set_focus();
+                        }
+                    }
+                    "quit" => app.exit(0),
+                    _ => {}
+                })
+                .on_tray_icon_event(|tray, event| {
+                    if let TrayIconEvent::Click {
+                        button: MouseButton::Left,
+                        button_state: MouseButtonState::Up,
+                        ..
+                    } = event
+                    {
+                        toggle_window(tray.app_handle());
+                    }
+                })
+                .build(app)?;
+            Ok(())
+        })
+        .on_window_event(|window, event| {
+            if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                api.prevent_close();
+                let _ = window.hide();
+            }
+        })
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

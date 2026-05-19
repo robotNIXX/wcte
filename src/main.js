@@ -1,7 +1,13 @@
 const { invoke } = window.__TAURI__.core;
 const { getCurrentWindow } = window.__TAURI__.window;
+const {
+  sendNotification,
+  isPermissionGranted,
+  requestPermission,
+} = window.__TAURI__.notification;
 
 const REFRESH_MS = 2 * 60 * 1000;
+const THRESHOLDS = [25, 50, 75, 90];
 
 // ── Pin (always on top) ────────────────────────────────────────
 
@@ -69,6 +75,44 @@ function setStatus(msg, isError = false) {
   el.className = isError ? "error" : "";
 }
 
+// ── Notifications ──────────────────────────────────────────────
+
+async function setupNotifications() {
+  try {
+    if (!(await isPermissionGranted())) await requestPermission();
+  } catch (_) {}
+}
+
+// Tracks which thresholds have already fired for each window.
+// Entry is removed when usage drops back below a threshold so it can fire again.
+const notifiedFH = new Set();
+const notifiedSD = new Set();
+
+async function checkThresholds(pct, label, notified) {
+  for (const t of THRESHOLDS) {
+    if (pct >= t) {
+      if (!notified.has(t)) {
+        const isVisible = await getCurrentWindow().isVisible();
+        // Skip only when user is actively watching (visible + pinned on top).
+        // If window is visible but not pinned — still notify.
+        // Don't mark threshold as fired if we skipped it — try again next refresh.
+        if (isVisible && pinned) continue;
+        notified.add(t);
+        try {
+          sendNotification({
+            title: "Claude Usage",
+            body: `${label}: ${t}% threshold reached (${Math.round(pct)}% used)`,
+          });
+        } catch (e) {
+          setStatus(`Notification error: ${e}`, true);
+        }
+      }
+    } else {
+      notified.delete(t);
+    }
+  }
+}
+
 // ── Fetch ──────────────────────────────────────────────────────
 
 async function refresh() {
@@ -88,6 +132,9 @@ async function refresh() {
       new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
     setStatus("");
+
+    await checkThresholds(data.five_hour_pct, "5h window", notifiedFH);
+    await checkThresholds(data.seven_day_pct, "7d window", notifiedSD);
   } catch (err) {
     console.error("get_usage:", err);
     setStatus(String(err), true);
@@ -100,4 +147,5 @@ document.getElementById("pin-btn").addEventListener("click", () => applyPin(!pin
 document.getElementById("refresh-btn").addEventListener("click", refresh);
 setInterval(renderCountdowns, 1000);
 setInterval(refresh, REFRESH_MS);
+setupNotifications();
 refresh();
